@@ -1,0 +1,36 @@
+---
+- hosts: localhost
+  become: true
+  tasks:
+  - name: set timezone
+    timezone:
+      name: US/Pacific
+
+  - name: get ec2 instance facts
+    ec2_instance_facts:
+      instance_ids:
+        - "{{ lookup('env', 'AWS_INSTANCE_ID') }}"
+    register: ec2_facts
+
+  - name: set hostname to match name tag
+    hostname: name={{ ec2_facts.instances[0].tags.Name }}
+
+  - name: add new hostname to /etc/hosts
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '^127\.0\.0\.1[ \t]+localhost'
+      line: "127.0.0.1 localhost {{ ec2_facts.instances[0].tags.Name }} {{ ec2_facts.instances[0].tags.Name }}.{{ ansible_dns.search | to_nice_yaml | regex_replace('- ') }}"
+      state: present
+  - name: save real resolv.conf
+    command: mv /run/systemd/resolve/resolv.conf /etc/resolv.conf.moved
+  - name: stop and disable systemd-resolved
+    systemd:
+      name: systemd-resolved
+      state: stopped
+      enabled: no
+  - name: remove fake resolv.conf
+    file:
+      state: absent
+      path: /etc/resolv.conf
+  - name: move real resolv.conf
+    command: mv /etc/resolv.conf.moved /etc/resolv.conf
