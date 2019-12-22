@@ -1,0 +1,8 @@
+# This was built for bitbucket pipelines, meant to reside inside of an s3 bucket
+image: atlassian/pipelines-awscli
+
+pipelines:
+  default:
+    - step:
+        script:
+          - aws s3 sync --delete . s3://your-s3-bucket-name

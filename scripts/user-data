@@ -1,0 +1,12 @@
+#!/bin/bash
+apt update
+DEBIAN_FRONTEND=noninteractive apt upgrade -yq
+apt install -y python python-pip python3-pip awscli
+/usr/bin/pip install boto3
+/usr/bin/pip3 install boto3
+mkdir /root/scripts
+aws s3 cp s3://your-s3-bucket-here/scripts /root/scripts --recursive
+chmod +x /root/scripts/*
+/usr/bin/python3 /root/scripts/ssh-key-injector.py
+/usr/bin/python3 /root/scripts/jc-api-key-injector.py
+. /root/scripts/bash-provision.sh
